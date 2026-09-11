@@ -1,0 +1,35 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno (nunca commitear secretos reales)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Builds
+dist/
+dist-ssr/
+build/
+
+# Docker
+*.pid
+
+# Editores / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+*.log
+npm-debug.log*
+
+# Archivos subidos por usuarios en desarrollo local (adjuntos de historias
+# clínicas, etc. — en producción viven en un volumen de Docker, no en git)
+backend/uploads/

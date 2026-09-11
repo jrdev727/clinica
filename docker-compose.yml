@@ -1,0 +1,59 @@
+name: clinica
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Sin "networks:" propio => solo la red privada por defecto de este
+    # proyecto. No es alcanzable desde otros proyectos ni desde el proxy.
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
+    volumes:
+      # Los adjuntos de Historias Clínicas quedan en un volumen propio:
+      # sobreviven a reinicios y reconstrucciones del contenedor.
+      - uploads:/app/uploads
+    # Igual que "db": solo en la red privada de este proyecto. La API no
+    # queda expuesta ni al proxy compartido ni a otros proyectos del VPS.
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    container_name: clinica-web # nombre fijo: es al que apunta el Caddyfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - default # red privada de este proyecto (para hablarle a "backend")
+      - proxy-net # red compartida (para que el proxy del VPS lo alcance)
+    # Sin "ports:": ya no expone el 80 directo al VPS. La única puerta de
+    # entrada pública es el proxy compartido (ver deploy/proxy/).
+
+networks:
+  proxy-net:
+    external: true # la crea deploy/proxy/docker-compose.yml, una vez por VPS
+
+volumes:
+  pgdata:
+  uploads:
