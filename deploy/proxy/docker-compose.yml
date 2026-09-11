@@ -1,0 +1,30 @@
+# Proxy compartido para TODO el VPS — no pertenece a ningún proyecto en
+# particular. Se levanta UNA sola vez en el servidor (fuera de la carpeta
+# de este o cualquier otro repo, por ejemplo en /opt/proxy) y cada proyecto
+# se conecta a él por afuera, sin tocar este archivo.
+#
+# Es el único servicio de todo el VPS que ocupa los puertos 80/443.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data # certificados HTTPS (Let's Encrypt), persistentes
+      - caddy_config:/config
+    networks:
+      - proxy-net
+
+networks:
+  # Red compartida: cada proyecto se suma a esta red (declarándola como
+  # "external") para que Caddy pueda alcanzar su contenedor web/gateway.
+  proxy-net:
+    name: proxy-net
+
+volumes:
+  caddy_data:
+  caddy_config:

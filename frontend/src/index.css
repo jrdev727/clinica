@@ -1,0 +1,128 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  body {
+    @apply antialiased text-warm-900 bg-warm-50 bg-grain;
+    font-feature-settings: "ss01" 1;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+}
+
+@layer components {
+  /* Botones: dos jerarquías claras, sin mezclar rounded-full/rounded-xl al azar */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
+           bg-brand-600 text-white shadow-warm hover:bg-brand-700;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
+           bg-white text-warm-800 border border-warm-200 shadow-warm-sm hover:bg-warm-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
+           bg-transparent text-warm-600 hover:bg-warm-100;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
+           bg-red-500 text-white shadow-warm hover:bg-red-600;
+  }
+
+  /* Tarjetas: una única superficie estándar en toda la app */
+  .surface {
+    @apply bg-white rounded-2xl border border-warm-200/70 shadow-warm-sm;
+  }
+
+  /* Etiqueta editorial en mayúsculas, para reemplazar el patrón "icono + número" repetido */
+  .eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.14em] text-warm-500;
+  }
+
+  .badge-success { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold bg-brand-100 text-brand-800; }
+  .badge-danger { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold bg-red-100 text-red-700; }
+  .badge-neutral { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold bg-warm-100 text-warm-700; }
+
+  .field-label {
+    @apply block text-sm font-semibold text-warm-800 mb-1.5;
+  }
+  .field-input {
+    @apply w-full px-3.5 py-2.5 bg-warm-50/60 border border-warm-200 rounded-xl outline-none
+           text-warm-900 placeholder:text-warm-400 transition-colors
+           focus:ring-2 focus:ring-brand-400/40 focus:border-brand-400 focus:bg-white;
+  }
+
+  .th-editorial {
+    @apply px-6 py-3.5 text-left text-[11px] font-bold uppercase tracking-[0.12em] text-warm-500;
+  }
+}
+
+/* 
+  Custom FullCalendar Theme Overrides 
+  Inspired by the modern dashboard mockup
+*/
+.custom-calendar-theme .fc {
+  font-family: inherit;
+}
+
+/* Remover bordes rígidos */
+.custom-calendar-theme .fc-theme-standard td,
+.custom-calendar-theme .fc-theme-standard th {
+  border-color: #e5d8cb; /* warm-200 */
+}
+.custom-calendar-theme .fc-theme-standard .fc-scrollgrid {
+  border: none;
+}
+
+/* Encabezados de días */
+.custom-calendar-theme .fc-col-header-cell {
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e5d8cb !important; /* warm-200 */
+}
+.custom-calendar-theme .fc-col-header-cell-cushion {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #754d3d; /* warm-800 */
+  padding: 8px 4px;
+}
+
+/* Eventos muy redondeados y sin bordes feos */
+.custom-calendar-theme .fc-event {
+  border-radius: 10px;
+  border: none !important;
+  box-shadow: 0 2px 6px -2px rgb(95 64 52 / 0.35);
+  padding: 4px;
+  overflow: hidden;
+  margin: 1px 4px;
+}
+.custom-calendar-theme .fc-event-main {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Línea de hora actual (Time indicator) */
+.custom-calendar-theme .fc-now-indicator-line {
+  border-color: #408f90; /* brand-500 */
+  border-width: 2px;
+}
+.custom-calendar-theme .fc-now-indicator-arrow {
+  border-color: transparent;
+  border-left-color: #408f90; /* brand-500 */
+}
+
+/* Etiquetas de hora */
+.custom-calendar-theme .fc-timegrid-slot-label-cushion {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c59f83; /* warm-400 */
+}
+

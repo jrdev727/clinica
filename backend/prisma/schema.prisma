@@ -1,0 +1,189 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum RolUsuario {
+  ADMIN
+  PROFESIONAL
+  RECEPCION
+}
+
+enum EstadoTurno {
+  PROGRAMADO
+  CONFIRMADO
+  EN_ESPERA
+  EN_ATENCION
+  FINALIZADO
+  CANCELADO
+  AUSENTE
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TARJETA_DEBITO
+  TARJETA_CREDITO
+  TRANSFERENCIA
+  MERCADO_PAGO
+}
+
+enum EstadoPago {
+  PENDIENTE
+  PAGADO
+  ANULADO
+}
+
+model CentroMedico {
+  id          String        @id @default(uuid())
+  nombre      String
+  cuit        String?
+  direccion   String?
+  telefono    String?
+  usuarios    Usuario[]
+  pacientes   Paciente[]
+  createdAt   DateTime      @default(now())
+}
+
+model Usuario {
+  id              String         @id @default(uuid())
+  centroMedicoId  String
+  centroMedico    CentroMedico   @relation(fields: [centroMedicoId], references: [id], onDelete: Cascade)
+  username        String         @unique
+  email           String?        @unique
+  passwordHash    String
+  rol             RolUsuario     @default(PROFESIONAL)
+  activo          Boolean        @default(true)
+  nombre          String?
+  apellido        String?
+  profesional     Profesional?
+  auditorias      AuditoriaLog[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Profesional {
+  id                 String                 @id @default(uuid())
+  usuarioId          String                 @unique
+  usuario            Usuario                @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  nombre             String
+  apellido           String
+  matricula          String?
+  especialidad       String
+  duracionTurnoMin   Int                    @default(45)
+  porcentajeComision Float                  @default(100.0)
+  
+  turnos             Turno[]
+  evoluciones        EvolucionClinica[]
+  disponibilidades   DisponibilidadHoraria[]
+  createdAt          DateTime               @default(now())
+}
+
+model DisponibilidadHoraria {
+  id             String       @id @default(uuid())
+  profesionalId  String
+  profesional    Profesional  @relation(fields: [profesionalId], references: [id], onDelete: Cascade)
+  diaSemana      Int          // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+  horaInicio     String       // "09:00"
+  horaFin        String       // "18:00"
+}
+
+model Paciente {
+  id              String             @id @default(uuid())
+  centroMedicoId  String
+  centroMedico    CentroMedico       @relation(fields: [centroMedicoId], references: [id], onDelete: Cascade)
+  dni             String
+  nombre          String
+  apellido        String
+  fechaNacimiento DateTime?
+  telefono        String?
+  email           String?
+  direccion       String?
+  coberturaMedica String?
+  numeroAfiliado  String?
+  antecedentes    String?
+  
+  turnos          Turno[]
+  evoluciones     EvolucionClinica[]
+  pagos           Pago[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([centroMedicoId, dni])
+}
+
+model Turno {
+  id              String             @id @default(uuid())
+  pacienteId      String
+  paciente        Paciente           @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  profesionalId   String
+  profesional     Profesional        @relation(fields: [profesionalId], references: [id], onDelete: Cascade)
+  
+  fechaHoraInicio DateTime
+  fechaHoraFin    DateTime
+  estado          EstadoTurno        @default(PROGRAMADO)
+  esSobreturno    Boolean            @default(false)
+  motivoConsulta  String?
+  
+  evolucion       EvolucionClinica?
+  pago            Pago?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model EvolucionClinica {
+  id              String       @id @default(uuid())
+  pacienteId      String
+  paciente        Paciente     @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  profesionalId   String
+  profesional     Profesional  @relation(fields: [profesionalId], references: [id], onDelete: Cascade)
+  turnoId         String?      @unique
+  turno           Turno?       @relation(fields: [turnoId], references: [id])
+  
+  fecha           DateTime     @default(now())
+  motivoConsulta  String?
+  notaClinica     String       @db.Text
+  diagnostico     String?
+  planTratamiento String?      @db.Text
+  adjuntos        String[]     @default([])
+  
+  esConfidencial  Boolean      @default(true)
+  estaFirmada     Boolean      @default(false)
+  firmadaAt       DateTime?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Pago {
+  id              String       @id @default(uuid())
+  pacienteId      String
+  paciente        Paciente     @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  turnoId         String?      @unique
+  turno           Turno?       @relation(fields: [turnoId], references: [id])
+  
+  montoTotal      Decimal      @db.Decimal(10, 2)
+  montoCopago     Decimal?     @db.Decimal(10, 2)
+  montoCobertura  Decimal?     @db.Decimal(10, 2)
+  metodoPago      MetodoPago   @default(EFECTIVO)
+  estado          EstadoPago   @default(PAGADO)
+  comprobanteNro  String?
+  observaciones   String?
+  
+  createdAt       DateTime     @default(now())
+}
+
+model AuditoriaLog {
+  id          String   @id @default(uuid())
+  usuarioId   String?
+  usuario     Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  accion      String
+  entidad     String
+  entidadId   String?
+  detalles    String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+}

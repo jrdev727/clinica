@@ -1,0 +1,15 @@
+# Un bloque por proyecto/dominio. Caddy consigue y renueva el certificado
+# HTTPS solo, para cada dominio que aparezca acá, apenas el DNS apunte al VPS.
+#
+# Para sumar un proyecto nuevo más adelante: agregar un bloque como el de
+# abajo (con su propio dominio y el nombre del contenedor al que apuntar)
+# y correr, en esta misma carpeta: docker compose exec caddy caddy reload
+# --config /etc/caddy/Caddyfile  (no hace falta reiniciar el contenedor).
+
+clinica.tudominio.com {
+	reverse_proxy clinica-web:80
+}
+
+# otroproyecto.tudominio.com {
+# 	reverse_proxy otroproyecto-web:80
+# }
