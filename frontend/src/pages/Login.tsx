@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import logoIcon from '../assets/logo-emuna-icon.png';
 
 export const Login = () => {
   const [username, setUsername] = useState('');
@@ -29,6 +30,7 @@ export const Login = () => {
           }}
         />
         <div className="relative">
+          <img src={logoIcon} alt="EMUNÁ" className="w-16 h-16 object-contain mb-4" />
           <p className="eyebrow text-warm-300">Sistema de gestión clínica</p>
           <h1 className="font-serif text-5xl mt-3 leading-[1.1]">EMUNÁ</h1>
           <p className="text-warm-300 text-sm mt-2 tracking-[0.2em] uppercase">Salud Integral</p>
@@ -45,6 +47,7 @@ export const Login = () => {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-500">
           <div className="lg:hidden mb-10 text-center">
+            <img src={logoIcon} alt="EMUNÁ" className="w-14 h-14 object-contain mx-auto mb-3" />
             <h1 className="font-serif text-4xl text-warm-900">EMUNÁ</h1>
             <p className="text-warm-500 text-xs mt-1 tracking-[0.2em] uppercase">Salud Integral</p>
           </div>

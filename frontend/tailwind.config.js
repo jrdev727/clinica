@@ -20,18 +20,18 @@ export default {
           800: '#244d50',
           900: '#204144',
         },
-        // Paleta Psicología (Cálidos / Tierra) - Estilo Imagen 1
+        // Paleta Psicología (Lavanda, derivada del logo EMUNÁ) - PREVIEW
         warm: {
-          50: '#faf8f5', // Fondo principal psicología
-          100: '#f2ece4',
-          200: '#e5d8cb',
-          300: '#d5bea9',
-          400: '#c59f83',
-          500: '#b78564', // Terracota principal
-          600: '#ac7254',
-          700: '#8e5b45',
-          800: '#754d3d',
-          900: '#5f4034',
+          50: '#f6f5fa',
+          100: '#e7e3f2',
+          200: '#d2cce5',
+          300: '#b4aad5',
+          400: '#9382c4',
+          500: '#7762b7', // Lavanda principal
+          600: '#6953ac',
+          700: '#56448d',
+          800: '#4b3e75',
+          900: '#3f355f',
         }
       },
       fontFamily: {

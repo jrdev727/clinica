@@ -1,6 +1,7 @@
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Calendar, Users, FileText, CreditCard, LogOut, UserCog, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import logoIcon from '../../assets/logo-emuna-icon.png';
 
 const ROLES_LABEL: Record<string, string> = {
   ADMIN: 'Administrador/a',
@@ -51,11 +52,7 @@ export const MainLayout = () => {
       {/* Sidebar */}
       <aside className="w-64 bg-warm-900 text-warm-300 flex flex-col shrink-0">
         <div className="px-6 py-7 flex items-center gap-3">
-          <svg viewBox="0 0 64 64" className="w-9 h-9 shrink-0">
-            <rect width="64" height="64" rx="16" fill="#754d3d" />
-            <path d="M32 14c-8.5 6-13 13.2-13 20.2C19 41.9 24.8 48 32 48s13-6.1 13-13.8c0-7-4.5-14.2-13-20.2Z" fill="none" stroke="#f2ece4" strokeWidth="2.5" strokeLinejoin="round" />
-            <path d="M32 22c-4.6 3.6-7 7.7-7 11.4 0 4.4 3.1 8 7 8s7-3.6 7-8c0-3.7-2.4-7.8-7-11.4Z" fill="#408f90" />
-          </svg>
+          <img src={logoIcon} alt="EMUNÁ" className="w-9 h-9 shrink-0 object-contain" />
           <div>
             <h2 className="font-serif text-xl text-white leading-none">EMUNÁ</h2>
             <p className="text-[10px] text-warm-400 mt-1.5 uppercase tracking-[0.18em] font-bold">Salud Integral</p>

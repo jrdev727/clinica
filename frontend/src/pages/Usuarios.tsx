@@ -36,7 +36,7 @@ export const Usuarios = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [formData, setFormData] = useState(FORM_INICIAL);
   const [horarios, setHorarios] = useState<DiaHorario[]>(horariosVacios());
-  const [isSavingHorarios, setIsSavingHorarios] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const openCreateModal = () => {
     setModalMode('create');
@@ -71,26 +71,18 @@ export const Usuarios = () => {
 
   const guardarHorarios = async () => {
     if (!selectedProfesionalId) return;
-    setIsSavingHorarios(true);
-    try {
-      const disponibilidades = horarios
-        .map((h, diaSemana) => ({ diaSemana, ...h }))
-        .filter(h => h.activo)
-        .map(({ diaSemana, horaInicio, horaFin }) => ({ diaSemana, horaInicio, horaFin }));
+    const disponibilidades = horarios
+      .map((h, diaSemana) => ({ diaSemana, ...h }))
+      .filter(h => h.activo)
+      .map(({ diaSemana, horaInicio, horaFin }) => ({ diaSemana, horaInicio, horaFin }));
 
-      await api.put(`/profesionales/${selectedProfesionalId}/disponibilidad`, { disponibilidades });
-      toast.success('Horarios de atención actualizados');
-      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al guardar los horarios');
-    } finally {
-      setIsSavingHorarios(false);
-    }
+    await api.put(`/profesionales/${selectedProfesionalId}/disponibilidad`, { disponibilidades });
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setIsSaving(true);
     try {
       if (modalMode === 'create') {
         await createUsuario({
@@ -107,11 +99,17 @@ export const Usuarios = () => {
           duracionTurnoMin: formData.duracionTurnoMin, porcentajeComision: formData.porcentajeComision,
           nuevaPassword: formData.nuevaPassword || undefined,
         });
+        if (mostrarDatosProfesional && selectedProfesionalId) {
+          await guardarHorarios();
+        }
+        queryClient.invalidateQueries({ queryKey: ['usuarios'] });
         toast.success('Usuario actualizado');
       }
       setIsModalOpen(false);
     } catch (err: any) {
       setErrorMsg(err.response?.data?.message || 'Error al guardar el usuario');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -317,17 +315,14 @@ export const Usuarios = () => {
                         </div>
                       ))}
                     </div>
-                    <button type="button" onClick={guardarHorarios} disabled={isSavingHorarios} className="btn-secondary w-full">
-                      {isSavingHorarios ? 'Guardando...' : 'Guardar Horarios'}
-                    </button>
                   </div>
                 )}
               </div>
 
               <div className="p-6 border-t border-warm-100 bg-warm-50 flex justify-end gap-3 shrink-0">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="btn-ghost">Cancelar</button>
-                <button type="submit" className="btn-primary">
-                  {modalMode === 'create' ? 'Crear Usuario' : 'Guardar Cambios'}
+                <button type="submit" disabled={isSaving} className="btn-primary">
+                  {isSaving ? 'Guardando...' : modalMode === 'create' ? 'Crear Usuario' : 'Guardar Cambios'}
                 </button>
               </div>
             </form>
