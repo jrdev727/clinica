@@ -36,6 +36,17 @@ export const useHistoriasClinicas = (pacienteId?: string) => {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id, sudoPassword }: { id: string, sudoPassword?: string }) => {
+      const config = sudoPassword ? { headers: { 'x-sudo-password': sudoPassword } } : undefined;
+      const { data } = await api.delete(`/historias-clinicas/${id}`, config);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['historiasClinicas'] });
+    },
+  });
+
   return {
     evoluciones: query.data || [],
     isLoading: query.isPending,
@@ -44,5 +55,7 @@ export const useHistoriasClinicas = (pacienteId?: string) => {
     isCreating: createMutation.isPending,
     firmarEvolucion: firmarMutation.mutateAsync,
     isFirmando: firmarMutation.isPending,
+    deleteEvolucion: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
   };
 };

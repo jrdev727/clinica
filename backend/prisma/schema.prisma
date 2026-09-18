@@ -76,10 +76,12 @@ model Profesional {
   duracionTurnoMin   Int                    @default(45)
   porcentajeComision Float                  @default(100.0)
   
-  turnos             Turno[]
-  evoluciones        EvolucionClinica[]
-  disponibilidades   DisponibilidadHoraria[]
-  createdAt          DateTime               @default(now())
+  turnos                 Turno[]
+  evoluciones            EvolucionClinica[]
+  disponibilidades       DisponibilidadHoraria[]
+  derivacionesEnviadas   Derivacion[]           @relation("DerivacionOrigen")
+  derivacionesRecibidas  Derivacion[]           @relation("DerivacionDestino")
+  createdAt              DateTime               @default(now())
 }
 
 model DisponibilidadHoraria {
@@ -109,6 +111,7 @@ model Paciente {
   turnos          Turno[]
   evoluciones     EvolucionClinica[]
   pagos           Pago[]
+  derivaciones    Derivacion[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
@@ -156,6 +159,21 @@ model EvolucionClinica {
   
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+}
+
+model Derivacion {
+  id                     String       @id @default(uuid())
+  pacienteId             String
+  paciente               Paciente     @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  profesionalOrigenId    String
+  profesionalOrigen      Profesional  @relation("DerivacionOrigen", fields: [profesionalOrigenId], references: [id], onDelete: Cascade)
+  profesionalDestinoId   String
+  profesionalDestino     Profesional  @relation("DerivacionDestino", fields: [profesionalDestinoId], references: [id], onDelete: Cascade)
+
+  motivo                 String       @db.Text
+  adjunto                String?
+
+  createdAt              DateTime     @default(now())
 }
 
 model Pago {

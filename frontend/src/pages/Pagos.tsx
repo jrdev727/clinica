@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { DollarSign, Receipt, CreditCard, Banknote, X, User } from 'lucide-react';
+import { DollarSign, Receipt, CreditCard, Banknote, X, User, Ban } from 'lucide-react';
 import { usePagos } from '../hooks/usePagos';
 import { usePacientes } from '../hooks/usePacientes';
 import { useTurnos } from '../hooks/useTurnos';
+import { promptSudo } from '../utils/sudoPrompt';
 import toast from 'react-hot-toast';
 
 export const Pagos = () => {
-  const { pagos, isLoading, createPago, isCreating } = usePagos();
+  const { pagos, isLoading, createPago, isCreating, anularPago } = usePagos();
   const { pacientes } = usePacientes();
   const { turnos } = useTurnos();
 
@@ -65,6 +66,28 @@ export const Pagos = () => {
 
   const formatMetodo = (m: string) => m.replace('_', ' ');
 
+  const handleAnular = async (id: string) => {
+    if (!window.confirm('¿Estás seguro de anular este pago? El turno vuelve a quedar disponible para cobrarse de nuevo.')) return;
+    try {
+      await anularPago({ id });
+      toast.success('Pago anulado');
+    } catch (err: any) {
+      if (err.response?.data?.message === 'SUDO_REQUIRED' || err.response?.data?.message === 'SUDO_INVALID') {
+        const pwd = await promptSudo(err.response.data.detail);
+        if (pwd) {
+          try {
+            await anularPago({ id, sudoPassword: pwd });
+            toast.success('Pago anulado');
+          } catch (error: any) {
+            toast.error(error.response?.data?.detail || 'Contraseña incorrecta');
+          }
+        }
+      } else {
+        toast.error(err.response?.data?.message || 'Error al anular el pago');
+      }
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 relative h-full">
 
@@ -109,11 +132,12 @@ export const Pagos = () => {
                   <th className="th-editorial">Método</th>
                   <th className="th-editorial text-right">Monto Total</th>
                   <th className="th-editorial text-center">Estado</th>
+                  <th className="th-editorial text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-warm-100">
                 {pagos.map((pago: any) => (
-                  <tr key={pago.id} className="hover:bg-warm-50/50 transition-colors">
+                  <tr key={pago.id} className={`hover:bg-warm-50/50 transition-colors ${pago.estado === 'ANULADO' ? 'opacity-50' : ''}`}>
                     <td className="px-6 py-3.5 text-warm-500 text-sm">{new Date(pago.createdAt).toLocaleString()}</td>
                     <td className="px-6 py-3.5 font-semibold text-warm-900 text-sm">{pago.paciente?.nombre} {pago.paciente?.apellido}</td>
                     <td className="px-6 py-3.5">
@@ -126,9 +150,16 @@ export const Pagos = () => {
                       ${Number(pago.montoTotal).toLocaleString()}
                     </td>
                     <td className="px-6 py-3.5 text-center">
-                      <span className={pago.estado === 'PAGADO' ? 'badge-success' : 'badge-neutral'}>
+                      <span className={pago.estado === 'PAGADO' ? 'badge-success' : pago.estado === 'ANULADO' ? 'badge-danger' : 'badge-neutral'}>
                         {pago.estado}
                       </span>
+                    </td>
+                    <td className="px-6 py-3.5 text-right">
+                      {pago.estado === 'PAGADO' && (
+                        <button onClick={() => handleAnular(pago.id)} className="p-2 text-warm-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Anular Pago">
+                          <Ban className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

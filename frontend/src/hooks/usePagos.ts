@@ -23,11 +23,25 @@ export const usePagos = (filtros?: { fechaInicio?: string, fechaFin?: string }) 
     },
   });
 
+  const { mutateAsync: anularPago, isPending: isAnulando } = useMutation({
+    mutationFn: async ({ id, sudoPassword }: { id: string, sudoPassword?: string }) => {
+      const config = sudoPassword ? { headers: { 'x-sudo-password': sudoPassword } } : undefined;
+      const { data } = await api.patch(`/pagos/${id}/anular`, {}, config);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pagos'] });
+      queryClient.invalidateQueries({ queryKey: ['turnos'] });
+    },
+  });
+
   return {
     pagos,
     isLoading,
     error,
     createPago,
-    isCreating
+    isCreating,
+    anularPago,
+    isAnulando
   };
 };

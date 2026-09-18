@@ -53,6 +53,36 @@ export const registrarCobro = async (req: Request, res: Response) => {
   }
 };
 
+export const anularPago = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params as { id: string };
+    const centroMedicoId = req.user?.centroMedicoId;
+
+    const pago = await prisma.pago.findFirst({
+      where: { id, paciente: { centroMedicoId } }
+    });
+
+    if (!pago) {
+      return res.status(404).json({ message: 'Pago no encontrado' });
+    }
+
+    if (pago.estado === EstadoPago.ANULADO) {
+      return res.status(400).json({ message: 'Este pago ya está anulado' });
+    }
+
+    // Se desvincula del turno (en vez de borrarse) para que ese turno pueda
+    // volver a cobrarse si corresponde, sin perder el registro histórico.
+    const anulado = await prisma.pago.update({
+      where: { id },
+      data: { estado: EstadoPago.ANULADO, turnoId: null }
+    });
+
+    res.json(anulado);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al anular el pago' });
+  }
+};
+
 export const getPagos = async (req: Request, res: Response) => {
   try {
     const { fechaInicio, fechaFin } = req.query;

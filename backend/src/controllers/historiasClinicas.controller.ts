@@ -127,6 +127,35 @@ export const getAdjunto = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteEvolucion = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params as { id: string };
+    const { rol, profesionalId, centroMedicoId } = req.user!;
+
+    const evolucion = await prisma.evolucionClinica.findFirst({
+      where: { id, paciente: { centroMedicoId } }
+    });
+
+    if (!evolucion) {
+      return res.status(404).json({ message: 'Evolución no encontrada' });
+    }
+
+    if (rol !== 'ADMIN' && evolucion.profesionalId !== profesionalId) {
+      return res.status(403).json({ message: 'No autorizado para eliminar esta evolución' });
+    }
+
+    if (evolucion.estaFirmada) {
+      return res.status(400).json({ message: 'No se puede eliminar una nota ya firmada (registro médico inmutable)' });
+    }
+
+    // La contraseña ya fue verificada por sudoMiddleware antes de llegar acá.
+    await prisma.evolucionClinica.delete({ where: { id } });
+    res.json({ message: 'Evolución eliminada correctamente' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al eliminar la evolución' });
+  }
+};
+
 export const firmarEvolucion = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };

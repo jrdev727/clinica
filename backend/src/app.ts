@@ -30,6 +30,7 @@ import hcRoutes from './routes/historiasClinicas.routes';
 import pagosRoutes from './routes/pagos.routes';
 import usuariosRoutes from './routes/usuarios.routes';
 import auditoriaRoutes from './routes/auditoria.routes';
+import derivacionesRoutes from './routes/derivaciones.routes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacientesRoutes);
@@ -39,5 +40,6 @@ app.use('/api/historias-clinicas', hcRoutes);
 app.use('/api/pagos', pagosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/auditoria', auditoriaRoutes);
+app.use('/api/derivaciones', derivacionesRoutes);
 
 export default app;

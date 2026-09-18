@@ -242,20 +242,10 @@ export const updateTurno = async (req: Request, res: Response) => {
 export const deleteTurno = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
-    const sudoPassword = req.headers['x-sudo-password'] as string;
 
+    // La contraseña ya fue verificada por sudoMiddleware antes de llegar acá.
     const turnoExistente = await prisma.turno.findUnique({ where: { id } });
     if (!turnoExistente) return res.status(404).json({ message: 'Turno no encontrado' });
-
-    // Validar si intenta eliminar un turno finalizado (operación crítica)
-    if (turnoExistente.estado === 'FINALIZADO') {
-      const userId = req.user?.usuarioId;
-      if (!userId) return res.status(401).json({ message: 'No autenticado' });
-      const result = await verifySudoPassword(userId, sudoPassword);
-      if (!result.valid) {
-        return res.status(403).json({ message: result.reason, detail: result.detail });
-      }
-    }
 
     await prisma.turno.delete({ where: { id } });
     res.json({ message: 'Turno eliminado correctamente' });

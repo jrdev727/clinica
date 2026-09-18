@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Lock, Unlock, Edit3, FileDown, X, Paperclip, FileImage, FileText } from 'lucide-react';
+import { Search, Lock, Unlock, Edit3, FileDown, X, Paperclip, FileImage, FileText, Send, Trash2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { usePacientes } from '../hooks/usePacientes';
 import { useHistoriasClinicas } from '../hooks/useHistoriasClinicas';
+import { useDerivaciones } from '../hooks/useDerivaciones';
+import { useProfesionales } from '../hooks/useProfesionales';
+import { promptSudo } from '../utils/sudoPrompt';
 import toast from 'react-hot-toast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -14,7 +17,9 @@ export const HistoriasClinicas = () => {
   const { pacientes, isLoading: isLoadingPacientes } = usePacientes();
   const [selectedPacienteId, setSelectedPacienteId] = useState<string | undefined>(undefined);
   
-  const { evoluciones, isLoading: isLoadingEvoluciones, createEvolucion, firmarEvolucion, isCreating } = useHistoriasClinicas(selectedPacienteId);
+  const { evoluciones, isLoading: isLoadingEvoluciones, createEvolucion, firmarEvolucion, deleteEvolucion, isCreating } = useHistoriasClinicas(selectedPacienteId);
+  const { derivaciones, createDerivacion, isCreating: isCreatingDerivacion } = useDerivaciones(selectedPacienteId);
+  const { profesionales } = useProfesionales();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,6 +47,11 @@ export const HistoriasClinicas = () => {
   const [archivosAdjuntos, setArchivosAdjuntos] = useState<File[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isDerivacionModalOpen, setIsDerivacionModalOpen] = useState(false);
+  const [derivacionForm, setDerivacionForm] = useState({ profesionalDestinoId: '', motivo: '' });
+  const [derivacionAdjunto, setDerivacionAdjunto] = useState<File | null>(null);
+  const [derivacionError, setDerivacionError] = useState('');
 
   const pacientesFiltrados = pacientes?.filter((p: any) => 
     p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -104,6 +114,28 @@ export const HistoriasClinicas = () => {
     }
   };
 
+  const handleEliminarEvolucion = async (id: string) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta nota? Esta acción no se puede deshacer.')) return;
+    try {
+      await deleteEvolucion({ id });
+      toast.success('Nota eliminada');
+    } catch (err: any) {
+      if (err.response?.data?.message === 'SUDO_REQUIRED' || err.response?.data?.message === 'SUDO_INVALID') {
+        const pwd = await promptSudo(err.response.data.detail);
+        if (pwd) {
+          try {
+            await deleteEvolucion({ id, sudoPassword: pwd });
+            toast.success('Nota eliminada');
+          } catch (error: any) {
+            toast.error(error.response?.data?.detail || 'Contraseña incorrecta');
+          }
+        }
+      } else {
+        toast.error(err.response?.data?.message || 'Error al eliminar la nota');
+      }
+    }
+  };
+
   const exportToPDF = () => {
     if (!selectedPaciente) return;
     const doc = new jsPDF();
@@ -145,6 +177,73 @@ export const HistoriasClinicas = () => {
     } catch {
       toast.error('No se pudo abrir el archivo adjunto');
     }
+  };
+
+  const verAdjuntoDerivacion = async (path: string) => {
+    try {
+      const filename = path.split('/').pop();
+      const response = await api.get(`/derivaciones/adjuntos/${filename}`, { responseType: 'blob' });
+      const blobUrl = URL.createObjectURL(response.data);
+      window.open(blobUrl, '_blank');
+    } catch {
+      toast.error('No se pudo abrir el archivo adjunto');
+    }
+  };
+
+  const handleDerivacionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPacienteId) return;
+    setDerivacionError('');
+    try {
+      const payload = new FormData();
+      payload.append('pacienteId', selectedPacienteId);
+      payload.append('profesionalDestinoId', derivacionForm.profesionalDestinoId);
+      payload.append('motivo', derivacionForm.motivo);
+      if (derivacionAdjunto) {
+        payload.append('adjunto', derivacionAdjunto);
+      }
+
+      await createDerivacion(payload);
+
+      toast.success('Paciente derivado correctamente');
+      setIsDerivacionModalOpen(false);
+      setDerivacionForm({ profesionalDestinoId: '', motivo: '' });
+      setDerivacionAdjunto(null);
+    } catch (error: any) {
+      setDerivacionError(error.response?.data?.message || 'Error al derivar el paciente');
+    }
+  };
+
+  const exportDerivacionPDF = (derivacion: any) => {
+    if (!selectedPaciente) return;
+    const doc = new jsPDF();
+
+    doc.setFontSize(20);
+    doc.text('Derivación de Paciente', 14, 22);
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(`Paciente: ${selectedPaciente.apellido}, ${selectedPaciente.nombre}`, 14, 32);
+    doc.text(`DNI: ${selectedPaciente.dni}`, 14, 39);
+    doc.text(`Fecha de derivación: ${new Date(derivacion.createdAt).toLocaleString()}`, 14, 46);
+    doc.text(`De: ${derivacion.profesionalOrigen.nombre} ${derivacion.profesionalOrigen.apellido} (${derivacion.profesionalOrigen.especialidad})`, 14, 53);
+    doc.text(`Para: ${derivacion.profesionalDestino.nombre} ${derivacion.profesionalDestino.apellido} (${derivacion.profesionalDestino.especialidad})`, 14, 60);
+
+    doc.setFontSize(13);
+    doc.setTextColor(30);
+    doc.text('Motivo / Evolución del paciente', 14, 74);
+    doc.setFontSize(11);
+    doc.setTextColor(60);
+    const motivoLines = doc.splitTextToSize(derivacion.motivo, 180);
+    doc.text(motivoLines, 14, 82);
+
+    if (derivacion.adjunto) {
+      const finalY = 82 + motivoLines.length * 6 + 10;
+      doc.setFontSize(10);
+      doc.setTextColor(120);
+      doc.text('Esta derivación tiene un archivo adjunto disponible en el sistema.', 14, finalY);
+    }
+
+    doc.save(`Derivacion_${selectedPaciente.dni}_${new Date(derivacion.createdAt).toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
@@ -194,6 +293,9 @@ export const HistoriasClinicas = () => {
                    <button onClick={exportToPDF} className="btn-secondary text-sm py-2 px-4">
                      <FileDown className="w-4 h-4" /> Exportar PDF
                    </button>
+                   <button onClick={() => setIsDerivacionModalOpen(true)} className="btn-secondary text-sm py-2 px-4">
+                     <Send className="w-4 h-4" /> Derivar
+                   </button>
                    <button onClick={() => setIsModalOpen(true)} className="btn-primary text-sm py-2 px-4">
                      <Edit3 className="w-4 h-4" /> Nueva Nota
                    </button>
@@ -201,6 +303,32 @@ export const HistoriasClinicas = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 bg-warm-50/30">
+                 {derivaciones.length > 0 && (
+                   <div className="mb-6 space-y-2">
+                     <span className="eyebrow">Derivaciones</span>
+                     {derivaciones.map((d: any) => (
+                       <div key={d.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 rounded-xl bg-white border border-warm-100 shadow-warm-sm">
+                         <div className="min-w-0">
+                           <p className="text-sm font-bold text-warm-900">
+                             {d.profesionalOrigen.nombre} {d.profesionalOrigen.apellido} → {d.profesionalDestino.nombre} {d.profesionalDestino.apellido}
+                           </p>
+                           <p className="text-xs text-warm-400 font-semibold mt-0.5">{new Date(d.createdAt).toLocaleString()}</p>
+                           <p className="text-sm text-warm-600 mt-1.5 line-clamp-2">{d.motivo}</p>
+                         </div>
+                         <div className="flex gap-2 shrink-0">
+                           {d.adjunto && (
+                             <button onClick={() => verAdjuntoDerivacion(d.adjunto)} className="btn-ghost text-xs py-1.5 px-3">
+                               <Paperclip className="w-3.5 h-3.5" /> Adjunto
+                             </button>
+                           )}
+                           <button onClick={() => exportDerivacionPDF(d)} className="btn-secondary text-xs py-1.5 px-3">
+                             <FileDown className="w-3.5 h-3.5" /> PDF
+                           </button>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 )}
                  {isLoadingEvoluciones ? (
                     <p className="text-center text-warm-400 mt-10 text-sm">Cargando historia clínica...</p>
                  ) : evoluciones.length === 0 ? (
@@ -224,9 +352,14 @@ export const HistoriasClinicas = () => {
                               {ev.estaFirmada ? (
                                 <span className="badge-success">Sello Digital</span>
                               ) : (
-                                <button onClick={() => handleFirmar(ev.id)} className="text-[10px] uppercase font-bold text-brand-700 hover:bg-brand-50 bg-white border border-brand-200 px-3 py-1 rounded-md transition-colors flex items-center gap-1">
-                                  <Lock className="w-3 h-3" /> Firmar
-                                </button>
+                                <div className="flex items-center gap-1.5">
+                                  <button onClick={() => handleEliminarEvolucion(ev.id)} className="text-warm-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-colors" title="Eliminar nota">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => handleFirmar(ev.id)} className="text-[10px] uppercase font-bold text-brand-700 hover:bg-brand-50 bg-white border border-brand-200 px-3 py-1 rounded-md transition-colors flex items-center gap-1">
+                                    <Lock className="w-3 h-3" /> Firmar
+                                  </button>
+                                </div>
                               )}
                             </div>
                             <p className="text-sm text-warm-700 whitespace-pre-wrap leading-relaxed">{ev.notaClinica}</p>
@@ -341,6 +474,60 @@ export const HistoriasClinicas = () => {
                 <button type="button" onClick={() => setIsModalOpen(false)} className="btn-ghost">Cancelar</button>
                 <button type="submit" disabled={isCreating} className="btn-primary">
                   {isCreating ? 'Guardando...' : 'Guardar Evolución'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isDerivacionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-warm-900/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+          <div className="bg-white rounded-2xl shadow-warm-lg w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 border-b border-warm-100 flex justify-between items-center bg-warm-50 shrink-0">
+              <div>
+                 <h3 className="font-serif text-xl text-warm-900">Derivar Paciente</h3>
+                 <p className="text-sm text-warm-500">Paciente: {selectedPaciente?.nombre} {selectedPaciente?.apellido}</p>
+              </div>
+              <button onClick={() => setIsDerivacionModalOpen(false)} className="text-warm-400 hover:text-warm-700"><X className="w-5 h-5" /></button>
+            </div>
+
+            <form onSubmit={handleDerivacionSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto flex-1 space-y-5">
+                {derivacionError && <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-medium border border-red-100">{derivacionError}</div>}
+
+                <div>
+                  <label className="field-label">Derivar a *</label>
+                  <select required className="field-input" value={derivacionForm.profesionalDestinoId} onChange={e => setDerivacionForm({ ...derivacionForm, profesionalDestinoId: e.target.value })}>
+                    <option value="">Seleccioná un profesional...</option>
+                    {profesionales.map((p: any) => (
+                      <option key={p.id} value={p.id}>{p.apellido}, {p.nombre} — {p.especialidad}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="field-label">Motivo / Estado y evolución del paciente *</label>
+                  <textarea required rows={6} className="field-input resize-none" value={derivacionForm.motivo} onChange={e => setDerivacionForm({ ...derivacionForm, motivo: e.target.value })} placeholder="Detalle general del estado y la evolución del paciente para el profesional que lo recibe..." />
+                </div>
+
+                <div className="bg-warm-50/50 border-2 border-dashed border-warm-200 rounded-xl p-4 transition-colors hover:border-brand-400 relative">
+                  <input type="file" accept=".jpg,.jpeg,.png,.pdf" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={e => setDerivacionAdjunto(e.target.files?.[0] || null)} />
+                  <div className="flex flex-col items-center justify-center text-warm-500 pointer-events-none">
+                    <Paperclip className="w-5 h-5 mb-2 text-brand-500" />
+                    <p className="text-sm font-medium">{derivacionAdjunto ? derivacionAdjunto.name : 'Click o arrastrá un archivo para adjuntar (opcional)'}</p>
+                    <p className="text-xs text-warm-400 mt-1">Soporta JPG, PNG, PDF (Máx 10MB)</p>
+                  </div>
+                </div>
+                {derivacionAdjunto && (
+                  <button type="button" onClick={() => setDerivacionAdjunto(null)} className="text-xs text-warm-500 hover:text-red-600 -mt-3">Quitar archivo adjunto</button>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-warm-100 bg-warm-50 flex justify-end gap-3 shrink-0">
+                <button type="button" onClick={() => setIsDerivacionModalOpen(false)} className="btn-ghost">Cancelar</button>
+                <button type="submit" disabled={isCreatingDerivacion} className="btn-primary">
+                  {isCreatingDerivacion ? 'Derivando...' : 'Confirmar Derivación'}
                 </button>
               </div>
             </form>
