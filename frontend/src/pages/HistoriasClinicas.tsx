@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Search, Lock, Unlock, Edit3, FileDown, X, Paperclip, FileImage, FileText, Send, Trash2 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Navigate } from 'react-router-dom';
 import { usePacientes } from '../hooks/usePacientes';
 import { useHistoriasClinicas } from '../hooks/useHistoriasClinicas';
 import { useDerivaciones } from '../hooks/useDerivaciones';
@@ -53,7 +53,14 @@ export const HistoriasClinicas = () => {
   const [derivacionAdjunto, setDerivacionAdjunto] = useState<File | null>(null);
   const [derivacionError, setDerivacionError] = useState('');
 
-  const pacientesFiltrados = pacientes?.filter((p: any) => 
+  // Confidencialidad médica: Recepción no tiene acceso a esta sección. El
+  // backend ya lo bloquea, esto evita que ni siquiera vea la pantalla.
+  const usuario = JSON.parse(localStorage.getItem('user') || 'null');
+  if (usuario?.rol === 'RECEPCION') {
+    return <Navigate to="/turnos" replace />;
+  }
+
+  const pacientesFiltrados = pacientes?.filter((p: any) =>
     p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.dni.includes(searchTerm)

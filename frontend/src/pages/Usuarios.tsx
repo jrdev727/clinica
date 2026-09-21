@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { UserPlus, FileEdit, Power, X, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -37,6 +38,13 @@ export const Usuarios = () => {
   const [formData, setFormData] = useState(FORM_INICIAL);
   const [horarios, setHorarios] = useState<DiaHorario[]>(horariosVacios());
   const [isSaving, setIsSaving] = useState(false);
+
+  // Gestión de equipo: solo Admin. El backend ya lo bloquea, esto evita que
+  // ni siquiera vea la pantalla.
+  const usuario = JSON.parse(localStorage.getItem('user') || 'null');
+  if (usuario?.rol !== 'ADMIN') {
+    return <Navigate to="/turnos" replace />;
+  }
 
   const openCreateModal = () => {
     setModalMode('create');

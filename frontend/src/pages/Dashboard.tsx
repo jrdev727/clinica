@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { usePacientes } from '../hooks/usePacientes';
 import { useTurnos } from '../hooks/useTurnos';
 
@@ -55,6 +55,13 @@ export const Dashboard = () => {
     const fraseAleatoria = FRASES_INSPIRACIONALES[Math.floor(Math.random() * FRASES_INSPIRACIONALES.length)];
     setFraseDelDia(fraseAleatoria);
   }, []);
+
+  // Este dashboard es el saludo personal de la profesional (foto, frase del
+  // día): no tiene sentido para Recepción, que va directo a la agenda.
+  const usuario = JSON.parse(localStorage.getItem('user') || 'null');
+  if (usuario?.rol === 'RECEPCION') {
+    return <Navigate to="/turnos" replace />;
+  }
 
   const ahora = new Date();
   const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());

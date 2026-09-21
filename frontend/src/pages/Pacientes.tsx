@@ -9,6 +9,8 @@ export const Pacientes = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const { pacientes, isLoading, error, createPaciente, updatePaciente, deletePaciente } = usePacientes();
+  const usuario = JSON.parse(localStorage.getItem('user') || 'null');
+  const esRecepcion = usuario?.rol === 'RECEPCION';
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -155,9 +157,11 @@ export const Pacientes = () => {
                      {p.email && <div>{p.email}</div>}
                   </td>
                   <td className="px-6 py-3.5 text-right space-x-1">
-                    <button onClick={() => navigate('/historias-clinicas', { state: { pacienteId: p.id } })} className="p-2 text-warm-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Ver Historia Clínica">
-                      <FileText className="w-4 h-4" />
-                    </button>
+                    {!esRecepcion && (
+                      <button onClick={() => navigate('/historias-clinicas', { state: { pacienteId: p.id } })} className="p-2 text-warm-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Ver Historia Clínica">
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    )}
                     <button onClick={() => openEditModal(p)} className="p-2 text-warm-400 hover:text-warm-700 hover:bg-warm-100 rounded-lg transition-colors" title="Editar Paciente">
                       <FileEdit className="w-4 h-4" />
                     </button>
@@ -237,10 +241,12 @@ export const Pacientes = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="field-label">Antecedentes Clínicos / Notas</label>
-                  <textarea rows={3} className="field-input resize-none" value={formData.antecedentes} onChange={e => setFormData({...formData, antecedentes: e.target.value})} />
-                </div>
+                {!esRecepcion && (
+                  <div>
+                    <label className="field-label">Antecedentes Clínicos / Notas</label>
+                    <textarea rows={3} className="field-input resize-none" value={formData.antecedentes} onChange={e => setFormData({...formData, antecedentes: e.target.value})} />
+                  </div>
+                )}
               </div>
 
               <div className="p-6 border-t border-warm-100 bg-warm-50 flex justify-end gap-3 shrink-0">

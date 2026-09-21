@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { DollarSign, Receipt, CreditCard, Banknote, X, User, Ban } from 'lucide-react';
 import { usePagos } from '../hooks/usePagos';
 import { usePacientes } from '../hooks/usePacientes';
@@ -20,6 +21,13 @@ export const Pagos = () => {
     observaciones: ''
   });
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Recepción no maneja la caja. El backend ya lo bloquea, esto evita que
+  // ni siquiera vea la pantalla.
+  const usuario = JSON.parse(localStorage.getItem('user') || 'null');
+  if (usuario?.rol === 'RECEPCION') {
+    return <Navigate to="/turnos" replace />;
+  }
 
   // Cálculos dinámicos
   const turnosPendientes = turnos?.filter((t: any) =>

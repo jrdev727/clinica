@@ -1,6 +1,17 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 
+// "antecedentes" es información clínica (motivo de consulta, historial de
+// salud mental, etc.) aunque viva en la ficha básica del paciente. Recepción
+// puede crear/editar pacientes para agendar, pero no debe leer ni escribir
+// ese campo — misma regla de confidencialidad que el resto de la historia
+// clínica.
+const ocultarAntecedentesSiCorresponde = (paciente: any, rol?: string) => {
+  if (rol !== 'RECEPCION') return paciente;
+  const { antecedentes, ...resto } = paciente;
+  return resto;
+};
+
 export const getPacientes = async (req: Request, res: Response) => {
   try {
     const { search } = req.query;
@@ -20,7 +31,7 @@ export const getPacientes = async (req: Request, res: Response) => {
       orderBy: { apellido: 'asc' }
     });
 
-    res.json(pacientes);
+    res.json(pacientes.map(p => ocultarAntecedentesSiCorresponde(p, req.user?.rol)));
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener pacientes' });
   }
@@ -43,7 +54,7 @@ export const getPacienteById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Paciente no encontrado' });
     }
 
-    res.json(paciente);
+    res.json(ocultarAntecedentesSiCorresponde(paciente, req.user?.rol));
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener paciente' });
   }
@@ -52,7 +63,13 @@ export const getPacienteById = async (req: Request, res: Response) => {
 export const createPaciente = async (req: Request, res: Response) => {
   try {
     const centroMedicoId = req.user?.centroMedicoId!;
-    const pacienteData = req.body;
+    const pacienteData = { ...req.body };
+
+    // Recepción no puede cargar antecedentes clínicos, ni siquiera armando
+    // el pedido a mano: se ignora cualquier valor que mande para ese campo.
+    if (req.user?.rol === 'RECEPCION') {
+      delete pacienteData.antecedentes;
+    }
 
     // Validar DNI único en el centro
     const existe = await prisma.paciente.findUnique({
@@ -70,7 +87,7 @@ export const createPaciente = async (req: Request, res: Response) => {
       }
     });
 
-    res.status(201).json(paciente);
+    res.status(201).json(ocultarAntecedentesSiCorresponde(paciente, req.user?.rol));
   } catch (error) {
     res.status(500).json({ message: 'Error al crear paciente' });
   }
@@ -79,8 +96,17 @@ export const createPaciente = async (req: Request, res: Response) => {
 export const updatePaciente = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
-    const pacienteData = req.body;
     const centroMedicoId = req.user?.centroMedicoId!;
+    const pacienteData = { ...req.body };
+
+    if (req.user?.rol === 'RECEPCION') {
+      delete pacienteData.antecedentes;
+    }
+
+    const pacienteExistente = await prisma.paciente.findFirst({ where: { id, centroMedicoId } });
+    if (!pacienteExistente) {
+      return res.status(404).json({ message: 'Paciente no encontrado' });
+    }
 
     // Validar DNI si se intenta cambiar
     if (pacienteData.dni) {
@@ -97,7 +123,7 @@ export const updatePaciente = async (req: Request, res: Response) => {
       data: pacienteData
     });
 
-    res.json(paciente);
+    res.json(ocultarAntecedentesSiCorresponde(paciente, req.user?.rol));
   } catch (error) {
     res.status(500).json({ message: 'Error al actualizar paciente' });
   }
@@ -106,9 +132,14 @@ export const updatePaciente = async (req: Request, res: Response) => {
 export const deletePaciente = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
-    await prisma.paciente.delete({
-      where: { id }
-    });
+    const centroMedicoId = req.user?.centroMedicoId;
+
+    const paciente = await prisma.paciente.findFirst({ where: { id, centroMedicoId } });
+    if (!paciente) {
+      return res.status(404).json({ message: 'Paciente no encontrado' });
+    }
+
+    await prisma.paciente.delete({ where: { id } });
     res.json({ message: 'Paciente eliminado correctamente' });
   } catch (error) {
     res.status(500).json({ message: 'Error al eliminar paciente' });

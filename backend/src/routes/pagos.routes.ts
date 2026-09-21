@@ -9,9 +9,9 @@ import { RolUsuario } from '@prisma/client';
 const router = Router();
 router.use(authMiddleware);
 
-// Todos manejan la caja en este contexto
-router.post('/', rbacMiddleware([RolUsuario.ADMIN, RolUsuario.RECEPCION, RolUsuario.PROFESIONAL]), auditMiddleware('Pago', 'Registrar cobro'), registrarCobro);
-router.get('/', rbacMiddleware([RolUsuario.ADMIN, RolUsuario.RECEPCION, RolUsuario.PROFESIONAL]), getPagos);
-router.patch('/:id/anular', rbacMiddleware([RolUsuario.ADMIN, RolUsuario.RECEPCION, RolUsuario.PROFESIONAL]), sudoMiddleware, auditMiddleware('Pago', 'Anular pago'), anularPago);
+// Recepción no maneja la caja: solo turnos y fichas de pacientes.
+router.post('/', rbacMiddleware([RolUsuario.ADMIN, RolUsuario.PROFESIONAL]), auditMiddleware('Pago', 'Registrar cobro'), registrarCobro);
+router.get('/', rbacMiddleware([RolUsuario.ADMIN, RolUsuario.PROFESIONAL]), getPagos);
+router.patch('/:id/anular', rbacMiddleware([RolUsuario.ADMIN, RolUsuario.PROFESIONAL]), sudoMiddleware, auditMiddleware('Pago', 'Anular pago'), anularPago);
 
 export default router;

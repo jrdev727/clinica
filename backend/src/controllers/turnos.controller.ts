@@ -140,8 +140,9 @@ export const updateEstadoTurno = async (req: Request, res: Response) => {
     const { id } = req.params as { id: string };
     const { estado } = req.body; // EstadoTurno
     const sudoPassword = req.headers['x-sudo-password'] as string;
+    const centroMedicoId = req.user?.centroMedicoId;
 
-    const turnoExistente = await prisma.turno.findUnique({ where: { id } });
+    const turnoExistente = await prisma.turno.findFirst({ where: { id, paciente: { centroMedicoId } } });
     if (!turnoExistente) return res.status(404).json({ message: 'Turno no encontrado' });
 
     // Validar lógicamente que no se finalice un turno futuro
@@ -176,8 +177,9 @@ export const updateTurno = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
     const { fechaHoraInicio, fechaHoraFin, esSobreturno, motivoConsulta } = req.body;
+    const centroMedicoId = req.user?.centroMedicoId;
 
-    const turnoExistente = await prisma.turno.findUnique({ where: { id } });
+    const turnoExistente = await prisma.turno.findFirst({ where: { id, paciente: { centroMedicoId } } });
     if (!turnoExistente) return res.status(404).json({ message: 'Turno no encontrado' });
 
     const inicio = fechaHoraInicio ? new Date(fechaHoraInicio) : turnoExistente.fechaHoraInicio;
@@ -242,9 +244,10 @@ export const updateTurno = async (req: Request, res: Response) => {
 export const deleteTurno = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
+    const centroMedicoId = req.user?.centroMedicoId;
 
     // La contraseña ya fue verificada por sudoMiddleware antes de llegar acá.
-    const turnoExistente = await prisma.turno.findUnique({ where: { id } });
+    const turnoExistente = await prisma.turno.findFirst({ where: { id, paciente: { centroMedicoId } } });
     if (!turnoExistente) return res.status(404).json({ message: 'Turno no encontrado' });
 
     await prisma.turno.delete({ where: { id } });

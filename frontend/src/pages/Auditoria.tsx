@@ -1,10 +1,18 @@
 import { Fragment, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuditoria } from '../hooks/useAuditoria';
 
 export const Auditoria = () => {
   const { logs, isLoading, error } = useAuditoria();
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
+
+  // Solo Admin. El backend ya lo bloquea, esto evita que ni siquiera vea la
+  // pantalla.
+  const usuario = JSON.parse(localStorage.getItem('user') || 'null');
+  if (usuario?.rol !== 'ADMIN') {
+    return <Navigate to="/turnos" replace />;
+  }
 
   const nombreUsuario = (log: any) => {
     if (!log.usuario) return 'Usuario eliminado';
