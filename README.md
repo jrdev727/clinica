@@ -73,8 +73,9 @@ Por defecto el frontend corre en `http://localhost:5173` y espera a la API en `h
 
 ### Usuario de prueba (después de correr el seed)
 
-- Usuario: `psicologa`
-- Contraseña: `admin123`
+El seed (`prisma/seed.ts`) crea un usuario administrador con usuario `psicologa` y una contraseña fija definida en ese mismo archivo, pensada solo para probar el sistema en tu máquina.
+
+⚠️ **Importante**: si corriste el seed contra una base accesible desde internet (cualquier entorno de producción, incluida una demo), esa contraseña queda activa y real. Cambiala apenas puedas entrando como esa cuenta → **Equipo** → editar tu usuario → cargar una **Nueva Contraseña** — y no la publiques en ningún lado (ni en este README, ni en un repo público).
 
 ## Despliegue en producción
 
@@ -109,7 +110,7 @@ Este proyecto está pensado para convivir con otros en el mismo VPS. Por eso el 
 1. Clonar el repo en el VPS: `git clone <url-del-repo> && cd clinica`.
 2. Copiar `.env.example` a `.env` en la raíz y completar `DB_PASSWORD` y `JWT_SECRET` con valores propios (`openssl rand -base64 48` genera uno bueno para el segundo).
 3. Levantar todo: `docker compose up -d --build`. El servicio `web` se conecta solo a la red `proxy-net` (tiene que existir de antes, por eso el paso anterior va primero) con el nombre fijo `clinica-web`, que es al que ya apunta el Caddyfile.
-4. Cargar los datos iniciales (**solo la primera vez**): `docker compose exec backend npx tsx prisma/seed.ts`.
+4. Cargar los datos iniciales (**solo la primera vez**): `docker compose exec backend npx tsx prisma/seed.ts`. Después, entrar con el usuario de prueba (ver sección de arriba) y **cambiar esa contraseña de inmediato**, antes de compartir la URL con nadie.
 5. Apuntar el DNS del dominio/subdominio (registro tipo A) a la IP del VPS. En un par de minutos, Caddy ya sirve el sitio con HTTPS solo.
 
 **Para sumar un proyecto nuevo más adelante:** en su propio `docker-compose.yml`, seguir el mismo patrón que el de este repo — el servicio "puerta de entrada" (el que sirve el frontend) sin `ports:`, con `container_name` propio y único, conectado a la red externa `proxy-net`. Después, agregar un bloque nuevo en `/opt/proxy/Caddyfile` con su dominio apuntando a ese nombre, y `docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` (no hace falta reiniciar nada).
@@ -126,7 +127,7 @@ Alternativa sin costo si preferís no administrar un servidor. El repo incluye `
 
 1. **Base de datos en Neon:** cuenta gratis en [neon.com](https://neon.com) (sin tarjeta), crear un proyecto, copiar la *connection string*.
 2. **Backend + Frontend en Render:** cuenta gratis en [render.com](https://render.com) (sin tarjeta), *New → Blueprint*, conectar el repo. Antes de confirmar, cargar `DATABASE_URL` en el servicio `emuna-clinica-backend` con la connection string de Neon.
-3. Cargar los datos iniciales una sola vez desde la *Shell* del servicio backend en Render: `npx tsx prisma/seed.ts`.
+3. Cargar los datos iniciales una sola vez desde la *Shell* del servicio backend en Render: `npx tsx prisma/seed.ts`. Después, entrar con el usuario de prueba (ver sección de arriba) y **cambiar esa contraseña de inmediato**, antes de compartir la URL con nadie.
 4. Revisar la URL real que Render le asignó al backend (puede llevar un sufijo si el nombre ya estaba tomado) y, si no coincide con lo que espera `render.yaml`, actualizar `VITE_API_URL` en el servicio frontend.
 
 Después del primer despliegue, cada push a `main` redespliega solo.
