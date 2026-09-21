@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Users, FileText, CreditCard, LogOut, UserCog, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, FileText, CreditCard, LogOut, UserCog, ShieldCheck, Menu, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
+import { useInactivityLogout } from '../../hooks/useInactivityLogout';
 import logoIcon from '../../assets/logo-emuna-icon.png';
 
 const ROLES_LABEL: Record<string, string> = {
@@ -28,6 +31,16 @@ export const MainLayout = () => {
   const token = localStorage.getItem('token');
   const { logout } = useAuth();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
+
+  useInactivityLogout(() => {
+    logout();
+    toast.error('Sesión cerrada por inactividad', { duration: 5000 });
+  });
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -49,14 +62,29 @@ export const MainLayout = () => {
 
   return (
     <div className="min-h-screen flex font-sans">
+      {/* Fondo oscuro detrás del sidebar cuando está abierto en mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-warm-900/50 backdrop-blur-sm z-30 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-warm-900 text-warm-300 flex flex-col shrink-0">
+      <aside
+        className={`w-64 bg-warm-900 text-warm-300 flex flex-col shrink-0 fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:static lg:translate-x-0 ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="px-6 py-7 flex items-center gap-3">
           <img src={logoIcon} alt="EMUNÁ" className="w-9 h-9 shrink-0 object-contain" />
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="font-serif text-xl text-white leading-none">EMUNÁ</h2>
             <p className="text-[10px] text-warm-400 mt-1.5 uppercase tracking-[0.18em] font-bold">Salud Integral</p>
           </div>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-warm-400 hover:text-white shrink-0">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="flex-1 px-3 space-y-0.5 mt-4">
@@ -92,19 +120,24 @@ export const MainLayout = () => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 bg-warm-50 bg-grain">
-        <header className="bg-white/70 backdrop-blur-sm px-8 py-4 border-b border-warm-200/70 flex items-center justify-between">
-          <p className="font-serif text-lg text-warm-800">{paginaActual?.label || 'EMUNÁ'}</p>
-          <div className="flex items-center gap-3">
+        <header className="bg-white/70 backdrop-blur-sm px-4 md:px-8 py-4 border-b border-warm-200/70 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-warm-500 hover:text-warm-900 shrink-0 -ml-1 p-1">
+              <Menu className="w-6 h-6" />
+            </button>
+            <p className="font-serif text-lg text-warm-800 truncate">{paginaActual?.label || 'EMUNÁ'}</p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
             <div className="w-9 h-9 rounded-full bg-warm-200 flex items-center justify-center text-warm-700 font-bold text-sm shrink-0">
               {iniciales || '?'}
             </div>
-            <div className="leading-tight">
+            <div className="leading-tight hidden sm:block">
               <p className="text-sm font-bold text-warm-900">{nombre}</p>
               <p className="text-xs text-warm-500">{rolLabel}</p>
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-4 md:p-8">
           <Outlet />
         </div>
       </main>

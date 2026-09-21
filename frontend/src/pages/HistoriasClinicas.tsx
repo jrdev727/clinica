@@ -284,12 +284,12 @@ export const HistoriasClinicas = () => {
         <div className="lg:col-span-2 surface flex flex-col min-h-0">
           {selectedPaciente ? (
             <>
-              <div className="p-6 border-b border-warm-100 flex justify-between items-center shrink-0 bg-warm-50/50 rounded-t-2xl">
+              <div className="p-6 border-b border-warm-100 flex flex-col md:flex-row md:justify-between md:items-center gap-4 shrink-0 bg-warm-50/50 rounded-t-2xl">
                  <div>
                    <h3 className="font-serif text-2xl text-warm-900">{selectedPaciente.apellido}, {selectedPaciente.nombre}</h3>
                    <p className="text-sm text-warm-500 font-medium">DNI: {selectedPaciente.dni} {selectedPaciente.coberturaMedica ? `• ${selectedPaciente.coberturaMedica}` : ''}</p>
                  </div>
-                 <div className="flex gap-2">
+                 <div className="flex flex-wrap gap-2">
                    <button onClick={exportToPDF} className="btn-secondary text-sm py-2 px-4">
                      <FileDown className="w-4 h-4" /> Exportar PDF
                    </button>

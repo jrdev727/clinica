@@ -161,8 +161,8 @@ export const Usuarios = () => {
             <thead>
               <tr className="bg-warm-50/60 border-b border-warm-200/70">
                 <th className="th-editorial">Nombre</th>
-                <th className="th-editorial">Usuario</th>
-                <th className="th-editorial">Rol</th>
+                <th className="th-editorial hidden md:table-cell">Usuario</th>
+                <th className="th-editorial hidden md:table-cell">Rol</th>
                 <th className="th-editorial">Estado</th>
                 <th className="th-editorial text-right">Acciones</th>
               </tr>
@@ -178,11 +178,11 @@ export const Usuarios = () => {
                     <p className="font-bold text-warm-900 text-sm">{u.profesional?.nombre || u.nombre} {u.profesional?.apellido || u.apellido}</p>
                     {u.profesional?.especialidad && <p className="text-xs text-brand-700 font-semibold">{u.profesional.especialidad}</p>}
                   </td>
-                  <td className="px-6 py-3.5 text-warm-600 text-sm">
+                  <td className="px-6 py-3.5 text-warm-600 text-sm hidden md:table-cell">
                     <div>{u.username}</div>
                     {u.email && <div className="text-xs text-warm-400">{u.email}</div>}
                   </td>
-                  <td className="px-6 py-3.5 text-warm-600 text-sm">{ROLES_LABEL[u.rol] || u.rol}</td>
+                  <td className="px-6 py-3.5 text-warm-600 text-sm hidden md:table-cell">{ROLES_LABEL[u.rol] || u.rol}</td>
                   <td className="px-6 py-3.5">
                     <span className={u.activo ? 'badge-success' : 'badge-danger'}>
                       {u.activo ? 'Activo' : 'Inactivo'}

@@ -126,8 +126,8 @@ export const Pacientes = () => {
             <thead>
               <tr className="bg-warm-50/60 border-b border-warm-200/70">
                 <th className="th-editorial">Paciente</th>
-                <th className="th-editorial">DNI</th>
-                <th className="th-editorial">Contacto</th>
+                <th className="th-editorial hidden md:table-cell">DNI</th>
+                <th className="th-editorial hidden md:table-cell">Contacto</th>
                 <th className="th-editorial text-right">Acciones</th>
               </tr>
             </thead>
@@ -149,8 +149,8 @@ export const Pacientes = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-3.5 text-warm-600 text-sm font-medium">{p.dni}</td>
-                  <td className="px-6 py-3.5 text-warm-500 text-sm">
+                  <td className="px-6 py-3.5 text-warm-600 text-sm font-medium hidden md:table-cell">{p.dni}</td>
+                  <td className="px-6 py-3.5 text-warm-500 text-sm hidden md:table-cell">
                      {p.telefono && <div>{p.telefono}</div>}
                      {p.email && <div>{p.email}</div>}
                   </td>

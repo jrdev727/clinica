@@ -25,11 +25,11 @@ export const Auditoria = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-warm-50/60 border-b border-warm-200/70">
-                <th className="th-editorial">Fecha</th>
-                <th className="th-editorial">Usuario</th>
-                <th className="th-editorial">Acción</th>
-                <th className="th-editorial">Entidad</th>
-                <th className="th-editorial">IP</th>
+                <th className="th-editorial px-3 md:px-6">Fecha</th>
+                <th className="th-editorial px-3 md:px-6">Usuario</th>
+                <th className="th-editorial px-3 md:px-6">Acción</th>
+                <th className="th-editorial hidden md:table-cell">Entidad</th>
+                <th className="th-editorial hidden md:table-cell">IP</th>
                 <th className="th-editorial"></th>
               </tr>
             </thead>
@@ -41,11 +41,11 @@ export const Auditoria = () => {
               ) : logs.map((log: any) => (
                 <Fragment key={log.id}>
                   <tr className="hover:bg-warm-50/50 transition-colors">
-                    <td className="px-6 py-3.5 text-warm-500 text-sm whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
-                    <td className="px-6 py-3.5 font-semibold text-warm-900 text-sm">{nombreUsuario(log)}</td>
-                    <td className="px-6 py-3.5 text-warm-700 text-sm">{log.accion}</td>
-                    <td className="px-6 py-3.5"><span className="badge-neutral">{log.entidad}</span></td>
-                    <td className="px-6 py-3.5 text-warm-400 text-xs font-mono">{log.ipAddress || '—'}</td>
+                    <td className="px-3 md:px-6 py-3.5 text-warm-500 text-xs md:text-sm whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
+                    <td className="px-3 md:px-6 py-3.5 font-semibold text-warm-900 text-sm">{nombreUsuario(log)}</td>
+                    <td className="px-3 md:px-6 py-3.5 text-warm-700 text-sm">{log.accion}</td>
+                    <td className="px-6 py-3.5 hidden md:table-cell"><span className="badge-neutral">{log.entidad}</span></td>
+                    <td className="px-6 py-3.5 text-warm-400 text-xs font-mono hidden md:table-cell">{log.ipAddress || '—'}</td>
                     <td className="px-6 py-3.5 text-right">
                       {log.detalles && (
                         <button onClick={() => setExpandidoId(expandidoId === log.id ? null : log.id)} className="p-1 text-warm-400 hover:text-warm-700">

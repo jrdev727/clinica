@@ -127,34 +127,34 @@ export const Pagos = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-warm-50/60 border-b border-warm-200/70 sticky top-0">
-                  <th className="th-editorial">Fecha</th>
-                  <th className="th-editorial">Paciente</th>
-                  <th className="th-editorial">Método</th>
-                  <th className="th-editorial text-right">Monto Total</th>
-                  <th className="th-editorial text-center">Estado</th>
-                  <th className="th-editorial text-right">Acciones</th>
+                  <th className="th-editorial hidden md:table-cell">Fecha</th>
+                  <th className="th-editorial px-3 md:px-6">Paciente</th>
+                  <th className="th-editorial hidden md:table-cell">Método</th>
+                  <th className="th-editorial px-3 md:px-6 text-right">Monto Total</th>
+                  <th className="th-editorial px-3 md:px-6 text-center">Estado</th>
+                  <th className="th-editorial px-3 md:px-6 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-warm-100">
                 {pagos.map((pago: any) => (
                   <tr key={pago.id} className={`hover:bg-warm-50/50 transition-colors ${pago.estado === 'ANULADO' ? 'opacity-50' : ''}`}>
-                    <td className="px-6 py-3.5 text-warm-500 text-sm">{new Date(pago.createdAt).toLocaleString()}</td>
-                    <td className="px-6 py-3.5 font-semibold text-warm-900 text-sm">{pago.paciente?.nombre} {pago.paciente?.apellido}</td>
-                    <td className="px-6 py-3.5">
+                    <td className="px-6 py-3.5 text-warm-500 text-sm hidden md:table-cell">{new Date(pago.createdAt).toLocaleString()}</td>
+                    <td className="px-3 md:px-6 py-3.5 font-semibold text-warm-900 text-sm">{pago.paciente?.nombre} {pago.paciente?.apellido}</td>
+                    <td className="px-6 py-3.5 hidden md:table-cell">
                       <div className="flex items-center gap-2 text-sm text-warm-600">
                         <MetodoIcon metodo={pago.metodoPago} />
                         <span className="capitalize">{formatMetodo(pago.metodoPago).toLowerCase()}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-3.5 text-right font-serif text-lg text-warm-900">
+                    <td className="px-3 md:px-6 py-3.5 text-right font-serif text-base md:text-lg text-warm-900">
                       ${Number(pago.montoTotal).toLocaleString()}
                     </td>
-                    <td className="px-6 py-3.5 text-center">
+                    <td className="px-3 md:px-6 py-3.5 text-center">
                       <span className={pago.estado === 'PAGADO' ? 'badge-success' : pago.estado === 'ANULADO' ? 'badge-danger' : 'badge-neutral'}>
                         {pago.estado}
                       </span>
                     </td>
-                    <td className="px-6 py-3.5 text-right">
+                    <td className="px-3 md:px-6 py-3.5 text-right">
                       {pago.estado === 'PAGADO' && (
                         <button onClick={() => handleAnular(pago.id)} className="p-2 text-warm-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Anular Pago">
                           <Ban className="w-4 h-4" />
